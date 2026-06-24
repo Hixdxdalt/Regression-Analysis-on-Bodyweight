@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import cvxpy as cp
+
 def merger(pathCal,pathMass):
     df1 = pd.read_csv(pathCal)
     df2 = pd.read_csv(pathMass)
@@ -39,3 +41,27 @@ def merger(pathCal,pathMass):
     #merged_df.to_csv("Finale.csv", index=False)
 
     return merged_df
+
+
+def optimize_calores(weight,fat,kcal):
+    carbs = cp.Variable(name="carbs")
+    proteins = cp.Variable(name="proteins")
+    fats = cp.Variable(name="fats")
+    protein_goal = weight * 1.6
+    fat_goal = weight * 0.5 if fat == 1 else weight * 1
+    
+    macros = cp.vstack([carbs, proteins, fats])
+    prob = cp.Problem(
+        objective = cp.Maximize(carbs)
+        constraints = [
+            proteins >= protein_goal,
+            fats >= fat_goal,
+            4*carbs + 4*proteins + 9*fats == kcal,
+            carbs >= 0,
+            proteins >= 0,
+            fats >= 0
+        ]
+    )
+    prob.solve()
+
+    return [carbs.value,proteins.value,fats.value]
